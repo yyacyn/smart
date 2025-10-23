@@ -1,0 +1,3 @@
+[submodule "smart-frontend"]
+	path = smart-frontend
+	url = https://github.com/yyacyn/smart-frontend.git
