@@ -2,7 +2,6 @@ import { getAuth } from "@clerk/nextjs/server"
 import authAdmin from "@/middlewares/authAdmin";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { all } from "axios";
 
 // Mengambil data dashboard untuk admin
 export async function GET(request) {
