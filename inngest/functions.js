@@ -48,3 +48,20 @@ export const syncUserDeletion = inngest.createFunction(
     })
   }
 )
+
+// Inngest function untuk menghapus kupon yang sudah expired
+export const deleteCouponOnExpiry = inngest.createFunction(
+  {id: 'delete-coupon-on-expiry'},
+  {event: 'app/coupon.expired'},
+  async ({ event, step }) => {
+    const { data } = event;
+    const expiryDate = new Date(data.expiresAt);
+    await step.sleepUntil('wait-for-expiry', expiryDate);
+
+    await step.run('delete-coupon-from-database', async () => {
+      await prisma.coupon.delete({
+        where: { code: data.code }
+      })
+    })
+  }
+)
