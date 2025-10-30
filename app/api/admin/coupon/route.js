@@ -1,3 +1,4 @@
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/prisma";
 import authAdmin from "@/middlewares/authAdmin";
 import { getAuth } from "@clerk/nextjs/server";
@@ -19,6 +20,7 @@ export async function POST(request) {
 
     await prisma.coupon.create({data: coupon}).then(async (coupon) => {
       // menjalankan Inngest Scheduler Function untuk menghapus kupon saat expired
+      
       await inngest.send({
         name: "app/coupon.expired",
         data: {
