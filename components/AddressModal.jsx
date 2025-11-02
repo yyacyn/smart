@@ -1,9 +1,16 @@
 'use client'
+import { useAuth } from "@clerk/nextjs"
 import { XIcon } from "lucide-react"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
+import { useDispatch } from "react-redux"
+import axios from "axios"
+import { addAddress } from "@/lib/features/address/addressSlice"
 
 const AddressModal = ({ setShowAddressModal }) => {
+
+    const { getToken } = useAuth();
+    const dispatch = useDispatch();
 
     const [address, setAddress] = useState({
         name: '',
@@ -26,7 +33,17 @@ const AddressModal = ({ setShowAddressModal }) => {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        setShowAddressModal(false)
+        try {
+            const token = await getToken()
+            const { data } = await axios.post('/api/address', {address}, { headers: { Authorization: `Bearer ${token}` } })
+            console.log(data)
+            dispatch(addAddress(data.newAddress))
+            toast.success(data.message)
+            setShowAddressModal(false)
+        } catch (error) {
+            console.log(error)
+            toast.error(error?.response?.data?.error || error.message)
+        }
     }
 
     return (
