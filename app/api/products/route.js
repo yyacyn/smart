@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-
+import { NextResponse } from "next/server";
 
 export async function GET(request) {
   try {
@@ -7,8 +7,10 @@ export async function GET(request) {
       where: { inStock: true },
       include: {
         rating: {
-          createdAt: true, rating: true, review: true,
-          user: {select: {name: true, image: true}}
+          select: {
+            createdAt: true, rating: true, review: true,
+            user: {select: {name: true, image: true}}
+          },
         },
         store: true,
       },
