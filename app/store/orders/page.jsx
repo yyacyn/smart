@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import Loading from "@/components/Loading"
 import axios from "axios"
-import { useAuth } from "@clerk/clerk-react"
+import { useAuth } from "@clerk/nextjs"
 import toast from "react-hot-toast"
 
 export default function StoreOrders() {
