@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "node server.js & next dev",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@clerk/backend": "^2.19.1",
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/nextjs": "^6.34.0",
     "@neondatabase/serverless": "^1.0.2",
     "@prisma/adapter-neon": "^6.18.0",
@@ -26,6 +28,8 @@
     "react-hot-toast": "^2.5.2",
     "react-redux": "^9.2.0",
     "recharts": "^3.1.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {
