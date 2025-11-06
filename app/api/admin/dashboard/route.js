@@ -25,6 +25,7 @@ export async function GET(request) {
         total: true
       }
     })
+    const users = await prisma.user.count();
   
     let totalRevenue = 0;
     allOrders.forEach(order => {
@@ -40,7 +41,8 @@ export async function GET(request) {
       stores,
       products,
       revenue,
-      allOrders
+      allOrders,
+      users
     }
   
     return NextResponse.json({ dashboardData });

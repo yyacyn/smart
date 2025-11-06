@@ -7,7 +7,6 @@ import AdminNavbar from "./AdminNavbar"
 import AdminSidebar from "./AdminSidebar"
 import { useAuth, useUser } from "@clerk/nextjs"
 import axios from "axios"
-import { set } from "date-fns"
 
 const AdminLayout = ({ children }) => {
 
