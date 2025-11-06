@@ -12,42 +12,36 @@ export default function ChatPage() {
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
 
-    // 🔌 Inisialisasi socket dan join ke room user
+    // Inisialisasi socket & join room
     useEffect(() => {
         if (!user) return;
 
+        // Hindari socket ganda
         if (!socket) {
             socket = io("http://localhost:3000", { transports: ["websocket"] });
             console.log("🔌 Socket initialized");
         }
 
-        // join room user
+        // Join ke room ID user
         socket.emit("joinRoom", user.id);
 
-        // Hapus semua listener dulu agar gak dobel
-        socket.off("newMessage");
+        // Cleanup sebelum pasang listener baru
         socket.off("connect");
+        socket.off("newMessage");
 
         socket.on("connect", () => {
-            console.log("Connected:", socket.id);
-        });
-
-        socket.on("newMessage", (msg) => {
-            console.log("newMessage event received:", msg);
-            setMessages((prev) => {
-                if (prev.some((m) => m.id === msg.id)) return prev; // hindari duplikat
-                return [...prev, msg];
-            });
+            console.log("✅ Connected:", socket.id);
         });
 
         return () => {
-            socket.off("newMessage");
             socket.off("connect");
+            socket.off("newMessage");
             socket.disconnect();
+            socket = null;
         };
     }, [user]);
 
-    // 🔹 Ambil daftar user dari API Clerk
+    // Ambil daftar user dari API
     useEffect(() => {
         fetch("/api/users")
             .then((res) => res.json())
@@ -55,22 +49,55 @@ export default function ChatPage() {
             .catch((err) => console.error("Failed to fetch users:", err));
     }, []);
 
-    // 🔹 Ambil pesan saat memilih user
+    // Ambil pesan saat memilih user
     useEffect(() => {
         if (!selectedUser || !user) return;
+
         fetch(`/api/chat?senderId=${user.id}&receiverId=${selectedUser.id}`)
             .then((res) => res.json())
-            .then(setMessages);
+            .then((data) => {
+                if (Array.isArray(data)) setMessages(data);
+                else setMessages([]);
+            })
+            .catch((err) => console.error("Failed to fetch messages:", err));
     }, [selectedUser, user]);
+
+    // Listener realtime pesan baru
+    useEffect(() => {
+        if (!socket || !user || !selectedUser) return;
+
+        const handleNewMessage = (msg) => {
+            console.log("📩 newMessage event:", msg);
+
+            // Hanya tampilkan kalau pesan ini relevan
+            const isRelevant =
+                (msg.senderId === user?.id && msg.receiverId === selectedUser?.id) ||
+                (msg.senderId === selectedUser?.id && msg.receiverId === user?.id);
+
+            if (!isRelevant) return;
+
+            setMessages((prev) => {
+                if (!Array.isArray(prev)) return [msg];
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                return [...prev, msg];
+            });
+        };
+
+        socket.on("newMessage", handleNewMessage);
+
+        return () => {
+            socket.off("newMessage", handleNewMessage);
+        };
+    }, [user, selectedUser]);
 
     // Kirim pesan
     const sendMessage = async () => {
-        if (!message || !selectedUser || !user) return;
+        if (!message.trim() || !selectedUser || !user) return;
 
         const payload = {
             senderId: user.id,
             receiverId: selectedUser.id,
-            content: message,
+            content: message.trim(),
         };
 
         try {
@@ -79,19 +106,25 @@ export default function ChatPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             const savedMessage = await res.json();
 
-            // tampilkan di UI sender
+            // Validasi pesan berhasil
+            if (!savedMessage?.id) return;
+
+            // Tambah di UI (sender)
             setMessages((prev) => [...prev, savedMessage]);
 
-            // kirim realtime ke penerima
+            // Kirim realtime ke penerima
             socket.emit("sendMessage", savedMessage);
 
+            // Kosongkan input
             setMessage("");
         } catch (err) {
             console.error("Failed to send message:", err);
         }
     };
+
     return (
         <div className="flex h-screen">
             {/* Sidebar daftar user */}
@@ -143,7 +176,7 @@ export default function ChatPage() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-gray-400">
+                                <p className="text-gray-400 text-center mt-10">
                                     No messages yet
                                 </p>
                             )}
