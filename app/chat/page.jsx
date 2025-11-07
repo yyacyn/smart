@@ -19,7 +19,7 @@ export default function ChatPage() {
 
         // Hindari socket ganda
         if (!socket) {
-            socket = io("https://besukma-socket.up.railway.app", { transports: ["websocket"], withCredentials: true, });
+            socket = io(SOCKET_URL, { transports: ["websocket"], withCredentials: true, });
             console.log("🔌 Socket initialized");
         }
 
