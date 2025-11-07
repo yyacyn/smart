@@ -11,6 +11,7 @@ export default function ChatPage() {
     const [selectedUser, setSelectedUser] = useState(null);
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState("");
+    const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
 
     // Inisialisasi socket & join room
     useEffect(() => {
@@ -18,7 +19,7 @@ export default function ChatPage() {
 
         // Hindari socket ganda
         if (!socket) {
-            socket = io("https://besukma.vercel.app/", { transports: ["websocket"] });
+            socket = io("https://besukma-socket.up.railway.app", { transports: ["websocket"], withCredentials: true, });
             console.log("🔌 Socket initialized");
         }
 
