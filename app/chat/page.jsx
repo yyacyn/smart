@@ -18,7 +18,7 @@ export default function ChatPage() {
 
         // Hindari socket ganda
         if (!socket) {
-            socket = io("http://localhost:3000", { transports: ["websocket"] });
+            socket = io("https://besukma.vercel.app/", { transports: ["websocket"] });
             console.log("🔌 Socket initialized");
         }
 
