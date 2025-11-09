@@ -192,3 +192,26 @@ model Wishlist {
 
     @@unique([userId, productId])
 }
+
+model Category {
+  id               Int        @id @default(autoincrement())
+  name             String
+  description      String?     // optional
+  image            String?     // optional (URL)
+  status           CategoryStatus @default(ACTIVE)
+  slug             String      @unique
+  metaTitle        String?     // optional
+  metaDescription  String?     // optional
+  sortOrder        Int?        @default(0)
+  parentCategoryId Int?        // relasi ke kategori induk
+  parentCategory   Category?   @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  subcategories    Category[]  @relation("CategoryHierarchy")
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
+}
