@@ -119,10 +119,6 @@ export async function PUT(request) {
     const contact = formData.get('contact');
     const address = formData.get('address');
     const website = formData.get('website');
-    const categoryId = formData.get('categoryId') ? parseInt(formData.get('categoryId')) : null;
-    const establishedDate = formData.get('establishedDate') || null;
-    const statusReason = formData.get('statusReason') || null;
-    const status = formData.get('status') || 'pending';
     const logo = formData.get('logo');
     
     // Cek apakah store ada
@@ -189,10 +185,6 @@ export async function PUT(request) {
         contact,
         address,
         website: website || null,
-        categoryId: categoryId || null,
-        establishedDate: establishedDate ? new Date(establishedDate) : null,
-        statusReason: statusReason || null,
-        status,
         logo: logoUrl
       },
       include: {
