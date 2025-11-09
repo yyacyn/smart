@@ -16,6 +16,7 @@ model User {
     email String
     image String
     cart  Json   @default("{}")
+    registeredAt  DateTime @default(now())
 
     // Relations
     ratings     Rating[]

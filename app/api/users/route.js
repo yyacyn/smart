@@ -12,6 +12,7 @@ export async function GET() {
         name: true,
         email: true,
         image: true, // pastikan kolom ini ada
+        registeredAt: true, // pastikan kolom ini ada
       },
     });
 
