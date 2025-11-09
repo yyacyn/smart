@@ -59,97 +59,71 @@ export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const categoryId = parseInt(id);
-    
+
     if (isNaN(categoryId)) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Invalid category ID' 
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Invalid category ID' }, { status: 400 });
     }
 
-    const formData = await request.formData();
-    
-    const name = formData.get('name');
-    const description = formData.get('description') || null;
-    const status = formData.get('status') || 'ACTIVE';
-    const metaTitle = formData.get('metaTitle') || null;
-    const metaDescription = formData.get('metaDescription') || null;
-    const sortOrder = parseInt(formData.get('sortOrder')) || 0;
-    const parentCategoryId = formData.get('parentCategoryId') ? parseInt(formData.get('parentCategoryId')) : null;
-    const image = formData.get('image');
+    // ✅ Ambil JSON, bukan formData
+    const body = await request.json();
+    const {
+      name,
+      description,
+      status,
+      metaTitle,
+      metaDescription,
+      sortOrder,
+      parentCategoryId,
+      image,
+      slug,
+    } = body;
 
-    // Generate slug from name if not provided
-    const slug = formData.get('slug') || name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
+    // ✅ Pastikan enum benar
+    const statusEnum = status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
 
-    let imageUrl = null;
+    // 🔄 Ambil image lama jika tidak dikirim baru
+    const existingCategory = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
 
-    // If image is provided, upload to imageKit
-    if (image && image.size > 0) {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      
-      const uploadResponse = await imageKit.upload({
-        file: buffer,
-        fileName: image.name,
-        folder: "categories",
-      });
+    const imageUrl = image || existingCategory.image;
 
-      imageUrl = imageKit.url({
-        path: uploadResponse.filePath,
-        transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { height: "512" }
-        ]
-      });
-    } else {
-      // If no new image provided, keep the existing image
-      const existingCategory = await prisma.category.findUnique({
-        where: { id: categoryId }
-      });
-      imageUrl = existingCategory.image;
-    }
-
+    // 🧩 Update kategori
     const category = await prisma.category.update({
       where: { id: categoryId },
       data: {
         name,
         description,
         image: imageUrl,
-        status,
-        slug,
+        status: statusEnum,
+        slug:
+          slug ||
+          name
+            ?.toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .trim(),
         metaTitle,
         metaDescription,
-        sortOrder,
-        parentCategoryId
+        sortOrder: sortOrder || 0,
+        parentCategoryId,
       },
       include: {
         parentCategory: true,
-        subcategories: true
-      }
+        subcategories: true,
+      },
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      data: category 
-    });
+    return NextResponse.json({ success: true, data: category });
   } catch (error) {
     console.error('Error updating category:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error.message || 'An error occurred while updating category' 
-      },
+      { success: false, message: error.message || 'Error updating category' },
       { status: 500 }
     );
   }
 }
+
 
 // DELETE: hapus kategori
 export async function DELETE(request, { params }) {
