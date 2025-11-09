@@ -74,7 +74,7 @@ export async function PUT(request, { params }) {
     
     const name = formData.get('name');
     const description = formData.get('description') || null;
-    const status = formData.get('status') || 'ACTIVE';
+    const status = formData.get('status').toUpperCase() || 'ACTIVE';
     const metaTitle = formData.get('metaTitle') || null;
     const metaDescription = formData.get('metaDescription') || null;
     const sortOrder = parseInt(formData.get('sortOrder')) || 0;
