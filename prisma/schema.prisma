@@ -36,7 +36,7 @@ model Product {
   mrp         Float
   price       Float
   images      String[]
-  category    String
+  categoryId  String?
   inStock     Boolean  @default(true)
   storeId     String
   createdAt   DateTime @default(now())
@@ -44,6 +44,7 @@ model Product {
 
   // Relations
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category   Category?   @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
   rating     Rating[]
   wishlists  Wishlist[]
@@ -160,7 +161,7 @@ model Store {
 
   // Tambahan disarankan:
   website         String? // Website resmi toko (optional)
-  categoryId      Int? // Relasi ke kategori
+  categoryId      String? // Relasi ke kategori
   establishedDate DateTime? // Tanggal berdiri
   statusReason    String? // Alasan perubahan status
   isActive        Boolean   @default(false)
@@ -202,7 +203,7 @@ model Wishlist {
 }
 
 model Category {
-  id               Int            @id @default(autoincrement())
+  id               String           @id @default(cuid())
   name             String
   description      String? // optional
   image            String? // optional (URL)
@@ -211,14 +212,15 @@ model Category {
   metaTitle        String? // optional
   metaDescription  String? // optional
   sortOrder        Int?           @default(0)
-  parentCategoryId Int? // relasi ke kategori induk
+  parentCategoryId String? // relasi ke kategori induk
   parentCategory   Category?      @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
   subcategories    Category[]     @relation("CategoryHierarchy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  Store Store[]
+  Store            Store[]
+  products         Product[]
 }
 
 enum CategoryStatus {

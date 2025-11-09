@@ -13,6 +13,7 @@ export async function GET(request) {
           },
         },
         store: true,
+        category: true,
       },
       orderBy: { createdAt: 'desc' }
     })
