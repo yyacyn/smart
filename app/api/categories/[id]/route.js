@@ -70,75 +70,130 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const formData = await request.formData();
-    
-    const name = formData.get('name');
-    const description = formData.get('description') || null;
-    const status = formData.get('status').toUpperCase() || 'ACTIVE';
-    const metaTitle = formData.get('metaTitle') || null;
-    const metaDescription = formData.get('metaDescription') || null;
-    const sortOrder = parseInt(formData.get('sortOrder')) || 0;
-    const parentCategoryId = formData.get('parentCategoryId') ? parseInt(formData.get('parentCategoryId')) : null;
-    const image = formData.get('image');
-
-    // Generate slug from name if not provided
-    const slug = formData.get('slug') || name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
-
-    let imageUrl = null;
-
-    // If image is provided, upload to imageKit
-    if (image && image.size > 0) {
-      const buffer = Buffer.from(await image.arrayBuffer());
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await request.formData();
       
-      const uploadResponse = await imageKit.upload({
-        file: buffer,
-        fileName: image.name,
-        folder: "categories",
+      const name = formData.get('name');
+      const description = formData.get('description') || null;
+      const status = formData.get('status').toUpperCase() || 'ACTIVE';
+      const metaTitle = formData.get('metaTitle') || null;
+      const metaDescription = formData.get('metaDescription') || null;
+      const sortOrder = parseInt(formData.get('sortOrder')) || 0;
+      const parentCategoryId = formData.get('parentCategoryId') ? parseInt(formData.get('parentCategoryId')) : null;
+      const image = formData.get('image');
+
+      // Generate slug from name if not provided
+      const slug = formData.get('slug') || name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .trim();
+
+      let imageUrl = null;
+
+      // If image is provided, upload to imageKit
+      if (image && image.size > 0) {
+        const buffer = Buffer.from(await image.arrayBuffer());
+        
+        const uploadResponse = await imageKit.upload({
+          file: buffer,
+          fileName: image.name,
+          folder: "categories",
+        });
+
+        imageUrl = imageKit.url({
+          path: uploadResponse.filePath,
+          transformation: [
+            { quality: "auto" },
+            { format: "webp" },
+            { height: "512" }
+          ]
+        });
+      } else {
+        // If no new image provided, keep the existing image
+        const existingCategory = await prisma.category.findUnique({
+          where: { id: categoryId }
+        });
+        imageUrl = existingCategory.image;
+      }
+
+      const category = await prisma.category.update({
+        where: { id: categoryId },
+        data: {
+          name,
+          description,
+          image: imageUrl,
+          status,
+          slug,
+          metaTitle,
+          metaDescription,
+          sortOrder,
+          parentCategoryId
+        },
+        include: {
+          parentCategory: true,
+          subcategories: true
+        }
       });
 
-      imageUrl = imageKit.url({
-        path: uploadResponse.filePath,
-        transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { height: "512" }
-        ]
+      return NextResponse.json({ 
+        success: true, 
+        data: category 
       });
     } else {
-      // If no new image provided, keep the existing image
-      const existingCategory = await prisma.category.findUnique({
-        where: { id: categoryId }
-      });
-      imageUrl = existingCategory.image;
-    }
-
-    const category = await prisma.category.update({
-      where: { id: categoryId },
-      data: {
+      // ✅ Ambil JSON, bukan formData
+      const body = await request.json();
+      const {
         name,
         description,
-        image: imageUrl,
         status,
-        slug,
         metaTitle,
         metaDescription,
         sortOrder,
-        parentCategoryId
-      },
-      include: {
-        parentCategory: true,
-        subcategories: true
-      }
-    });
+        parentCategoryId,
+        image,
+        slug,
+      } = body;
 
-    return NextResponse.json({ 
-      success: true, 
-      data: category 
-    });
+      // ✅ Pastikan enum benar
+      const statusEnum = status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+      // 🔄 Ambil image lama jika tidak dikirim baru
+      const existingCategory = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+
+      const imageUrl = image || existingCategory.image;
+
+      // 🧩 Update kategori
+      const category = await prisma.category.update({
+        where: { id: categoryId },
+        data: {
+          name,
+          description,
+          image: imageUrl,
+          status: statusEnum,
+          slug:
+            slug ||
+            name
+              ?.toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .trim(),
+          metaTitle,
+          metaDescription,
+          sortOrder: sortOrder || 0,
+          parentCategoryId,
+        },
+        include: {
+          parentCategory: true,
+          subcategories: true,
+        },
+      });
+
+      return NextResponse.json({ success: true, data: category });
+    }
   } catch (error) {
     console.error('Error updating category:', error);
     return NextResponse.json(
@@ -150,6 +205,76 @@ export async function PUT(request, { params }) {
     );
   }
 }
+
+// PUT: update kategori
+// export async function PUT(request, { params }) {
+//   try {
+//     const { id } = params;
+//     const categoryId = parseInt(id);
+
+//     if (isNaN(categoryId)) {
+//       return NextResponse.json({ success: false, message: 'Invalid category ID' }, { status: 400 });
+//     }
+
+//     // ✅ Ambil JSON, bukan formData
+//     const body = await request.json();
+//     const {
+//       name,
+//       description,
+//       status,
+//       metaTitle,
+//       metaDescription,
+//       sortOrder,
+//       parentCategoryId,
+//       image,
+//       slug,
+//     } = body;
+
+//     // ✅ Pastikan enum benar
+//     const statusEnum = status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+
+//     // 🔄 Ambil image lama jika tidak dikirim baru
+//     const existingCategory = await prisma.category.findUnique({
+//       where: { id: categoryId },
+//     });
+
+//     const imageUrl = image || existingCategory.image;
+
+//     // 🧩 Update kategori
+//     const category = await prisma.category.update({
+//       where: { id: categoryId },
+//       data: {
+//         name,
+//         description,
+//         image: imageUrl,
+//         status: statusEnum,
+//         slug:
+//           slug ||
+//           name
+//             ?.toLowerCase()
+//             .replace(/[^a-z0-9\s-]/g, '')
+//             .replace(/\s+/g, '-')
+//             .trim(),
+//         metaTitle,
+//         metaDescription,
+//         sortOrder: sortOrder || 0,
+//         parentCategoryId,
+//       },
+//       include: {
+//         parentCategory: true,
+//         subcategories: true,
+//       },
+//     });
+
+//     return NextResponse.json({ success: true, data: category });
+//   } catch (error) {
+//     console.error('Error updating category:', error);
+//     return NextResponse.json(
+//       { success: false, message: error.message || 'Error updating category' },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 // DELETE: hapus kategori
 export async function DELETE(request, { params }) {
