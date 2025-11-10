@@ -174,7 +174,7 @@ export async function PUT(request) {
         ]
       });
     }
-
+ 
     const updatedStore = await prisma.store.update({
       where: { id: storeId },
       data: {
