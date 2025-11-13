@@ -28,7 +28,6 @@ model User {
   messagesReceived Message[]  @relation("ReceivedMessages")
 }
 
-// Required for creating a Product: name, description, mrp, price, images, category, storeId
 model Product {
   id          String   @id @default(cuid())
   name        String
@@ -42,12 +41,44 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Relations
+  // 🔹 Tambahan baru (tidak merusak data lama)
+  stock             Int       @default(0)
+  minStock          Int?      @default(0)
+  weight            String?
+  dimensions        String?
+  model             String?
+  additionalInfo    String?
+  status            String    @default("draft")
+  sku               String?   @unique
+  barcode           String?   @unique
+  shippingWeight    String?
+  shippingLength    String?
+  shippingWidth     String?
+  shippingHeight    String?
+  warranty          String?
+  returnPolicy      String?
+  tags              String?
+  metaTitle         String?
+  metaDescription   String?
+
+  // 🔹 Relasi tambahan untuk varian produk
+  variants          ProductVariant[]
+
+  // Existing relations
   store      Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category   Category?   @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
   rating     Rating[]
   wishlists  Wishlist[]
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  variant   String
+  stock     Int      @default(0)
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 enum OrderStatus {
