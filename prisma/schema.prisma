@@ -90,7 +90,7 @@ enum OrderStatus {
 
 enum PaymentMethod {
   COD
-  STRIPE
+  BANK_TRANSFER
 }
 
 // Required for creating an Order: total, userId, storeId, addressId, isPaid, paymentMethod, isCouponUsed, coupon (JSON), orderItems (nested)
