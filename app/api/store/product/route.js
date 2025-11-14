@@ -17,8 +17,8 @@ export async function POST(request) {
     // ambil data dari form
     const formData = await request.formData();
     const name = formData.get("name");
-    const description = formData.get("description");
-    const mrp = Number(formData.get("mrp"));
+    const description = formData.get("description") || null;
+    const mrp = Number(formData.get("mrp")) || null;
     const price = Number(formData.get("price"));
     const category = formData.get("category"); // Ini akan menjadi categoryId
     const images = formData.getAll("images");
@@ -44,8 +44,8 @@ export async function POST(request) {
     const metaTitle = formData.get("metaTitle") || null;
     const metaDescription = formData.get("metaDescription") || null;
 
-    if(!name || !description || !mrp || !price || !category || images.length < 1){
-      return NextResponse.json({ error: "Missing product details" }, { status: 400 });
+    if(!name || !price || !category || images.length < 1){
+      return NextResponse.json({ error: `Missing product details: ${!name ? "name " : ""}${!price ? "price " : ""}${!category ? "category " : ""}${images.length < 1 ? "images" : ""}` }, { status: 400 });
     }
 
     // Validasi bahwa category ID yang diberikan benar-benar ada
