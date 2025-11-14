@@ -15,7 +15,7 @@ export async function PUT(request, { params }) {
     }
 
     // Ambil ID produk dari URL (misalnya /api/store/product/[id])
-    const { id } = params;
+    const { id } = params; 
 
     // Cek apakah produk milik seller ini
     const existingProduct = await prisma.product.findUnique({
