@@ -26,6 +26,7 @@ model User {
   wishlists        Wishlist[]
   messagesSent     Message[]  @relation("SentMessages")
   messagesReceived Message[]  @relation("ReceivedMessages")
+  reporter         Report[]   @relation("reporterRelation")
 }
 
 model Product {
@@ -103,11 +104,14 @@ model Order {
   addressId     String
   isPaid        Boolean       @default(false)
   paymentMethod PaymentMethod
+  notes         String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   isCouponUsed  Boolean       @default(false)
   coupon        Json          @default("{}")
   orderItems    OrderItem[]
+  // Timeline for status changes
+  statusHistory OrderStatusHistory[]
 
   // Relations
   user    User    @relation("BuyerRelation", fields: [userId], references: [id])
@@ -257,4 +261,82 @@ model Category {
 enum CategoryStatus {
   ACTIVE
   INACTIVE
+}
+
+// Order status history / timeline entries
+model OrderStatusHistory {
+  id        String   @id @default(cuid())
+  orderId   String
+  status    OrderStatus   @default(ORDER_PLACED)
+  changedBy String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// Enums for reports and priority
+enum ReportType {
+  PRODUCT
+  STORE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ReportStatus {
+  NEW
+  REVIEWED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  CLOSED
+  ESCALATED
+}
+
+// Customer reports / complaints submitted by users
+model Report {
+  id               String    @id @default(cuid())
+  reporterId       String?
+  reportType       ReportType
+  targetId         String
+  // targetName removed: frontend can fetch product/store details using targetId
+  subject          String
+  message          String   @db.Text
+  suggestedPriority Priority?
+  priority         Priority  @default(MEDIUM)
+  status           ReportStatus @default(NEW)
+  category         String?
+  attachments      String[]  @default([])
+  submittedAt      DateTime  @default(now())
+  reviewedAt       DateTime?
+  resolvedAt       DateTime?
+
+  // Relation to reporter (User) - optional to allow future anonymous reports if desired
+  reporter         User?     @relation("reporterRelation",fields: [reporterId], references: [id])
+
+  PriorityHistory  PriorityHistory[]
+
+  @@index([reportType])
+  @@index([status])
+}
+
+model PriorityHistory {
+  id        String   @id @default(cuid())
+  reportId  String
+  old       Priority
+  new       Priority
+  changedBy String?
+  reason    String?
+  createdAt DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
 }

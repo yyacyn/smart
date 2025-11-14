@@ -25,6 +25,7 @@ export async function GET(request, { params }) {
         address: true,
         user: true,
         store: true,
+        statusHistory: true,
       },
     });
 
