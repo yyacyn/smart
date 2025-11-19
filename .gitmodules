@@ -1,3 +1,6 @@
 [submodule "smart-frontend"]
 	path = smart-frontend
 	url = https://github.com/yyacyn/smart-frontend.git
+[submodule "besukma-main"]
+	path = besukma-main
+	url = https://github.com/AbabilPusano/besukma.git
